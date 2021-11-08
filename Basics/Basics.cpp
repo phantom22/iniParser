@@ -5,13 +5,15 @@
 #include "ini.cpp"
 using namespace std;
 
-int WinMain() {
+int main() {
 
-    string path = "input/test.ini";
-    //cout << "Enter file to read: ";
-    //cin >> path; 
-    ini::file x = ini::file(path);
-    cout << x.getInt("cat1", "a") << endl;
+    string iniPath = "input/settings.ini";
+    ini::file settings = ini::file(iniPath);
+
+    string num1 = settings.get<string>("main","a", "asdf");
+    int num2 = settings.get<int>("main","b", 0);
+    
+    cout << num1 << endl;
     return 0;
 
 }

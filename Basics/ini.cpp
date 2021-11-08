@@ -5,36 +5,46 @@
 #include <tuple>
 #include <iostream>
 #include <cstdlib>
+#include <algorithm>
 using namespace std;
 
 namespace ini {
 
-	//enum ExpectedTypes {
-	//	tInt
-	//};
-
 	class file {
 
 		private:
+
+			string _path;
+			
 			vector<tuple<string, string>> categories;
 
-			string getStringValue(string category, string property) {
-				string res = "";
-				int catI = -1;
+			void warn(string cat, string prop, string val, string def, string type) {
+				cout << "{" + _path + "} Invalid assignment for " + type + ": [" + cat + "." + prop + " == " + val + "] fallback value=[" + def + "]" << endl; 
+			}
+
+			template<typename T> bool checkIfValid (string val);
+
+			int findCategory(string category) {
+				int res = -1;
 				for (size_t i = 0; i < categories.size(); i++) {
 					string cat = std::get<0>(categories[i]);
 					if (cat == category) {
-						catI = i;
+						res = i;
 						break;
 					}
 				}
+				return res;
+			}
+
+			string getStringValue(string category, string property) {
+				string res = "";
+				int catI = findCategory(category);
 				if (catI != -1) {
-					string &props = std::get<1>(categories[catI]);
+					string &props = std::get<1>(categories[catI]); // store adress of first character of the string
 					stringstream ss (props);
 					string line;
-					char n = '\n';
 					// read line by line
-					while (getline(ss, line, n)) {
+					while (getline(ss, line, '\n')) {
 						const char delimiter = '=';
 						size_t i = line.find(delimiter);
 						if (i != string::npos) {
@@ -64,6 +74,7 @@ namespace ini {
 
 			file(string path) {
 
+				_path = path;
 				string contents;
 
 				ifstream file (path);
@@ -103,29 +114,141 @@ namespace ini {
 
 			}
 
-			int getInt(string cat, string prop) {
-				string val = getStringValue(cat, prop);
-				char* i = &val[0];
-				return atoi(i);
-			}
-
-			float getFloat(string cat, string prop) {
-				string val = getStringValue(cat, prop);
-				char *s = &val[0];
-				char* e;
-				return strtof(s, &e);
-			}
-
-			double getDouble(string cat, string prop) {
-				string val = getStringValue(cat, prop);
-				char* i = &val[0];
-				return atof(i);
-			}
-
-			bool getBool(const char cat[], const char prop[]) {
-				string val = getStringValue(cat, prop);
-				return val == "1" || val == "true" ? true : false;
-			}
+			template<typename T> T get (const char cat[], const char prop[], T def);
 		
 	};
+
+	template<> bool file::checkIfValid<int> (string val) {
+		vector<char> validChars = { '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+		bool isValid = true;
+		for (size_t i = 0; i < val.length(); i++) {
+			if (!std::count(validChars.begin(), validChars.end(), val[i])) {
+				isValid = false;
+			}
+		}
+		return isValid;
+	}
+
+	template<> bool file::checkIfValid<float> (string val) {
+		vector<char> validChars = { '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+		bool isValid = true;
+		for (size_t i = 0; i < val.length(); i++) {
+			if (!std::count(validChars.begin(), validChars.end(), val[i])) {
+				isValid = false;
+			}
+		}
+		return isValid;
+	}
+
+	template<> bool file::checkIfValid<double> (string val) {
+		vector<char> validChars = { '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+		bool isValid = true;
+		for (size_t i = 0; i < val.length(); i++) {
+			if (!std::count(validChars.begin(), validChars.end(), val[i])) {
+				isValid = false;
+			}
+		}
+		return isValid;
+	}
+
+	template<> bool file::checkIfValid<bool> (string val) {
+		vector<string> validValues = { "0", "1", "true", "false" };
+
+		bool isValid = true;
+		if (!std::count(validValues.begin(), validValues.end(), val)) {
+			isValid = false;
+		}
+		return isValid;
+	}
+
+	// ---------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
+
+	template<> int file::get<int> (const char cat[], const char prop[], int def) {
+		string val;
+		try {
+			val = getStringValue(cat, prop);
+		}
+		catch (invalid_argument e) {
+			return def;
+		}
+		bool isValid = checkIfValid<int>(val);
+
+		if (!isValid) {
+			warn(cat, prop, val, to_string(def), "int");
+		}
+
+		return isValid ? atoi(&val[0]) : def;
+	}
+
+	template<> float file::get<float> (const char cat[], const char prop[], float def) {
+		string val;
+		try {
+			val = getStringValue(cat, prop);
+		}
+		catch (invalid_argument e) {
+			return def;
+		}
+		bool isValid = checkIfValid<float>(val);
+
+		if (!isValid) {
+			warn(cat, prop, val, to_string(def), "float");
+		}
+
+		char* e;
+		return isValid ? strtof(&val[0], &e) : def;
+	}
+
+	template<> double file::get<double> (const char cat[], const char prop[], double def) {
+		string val;
+		try {
+			val = getStringValue(cat, prop);
+
+		}
+		catch (invalid_argument e) {
+			return def;
+		}
+		bool isValid = checkIfValid<double>(val);
+
+		if (!isValid) {
+			warn(cat, prop, val, to_string(def), "double");
+		}
+
+		return isValid ? atof(&val[0]) : def;
+	}
+
+	template<> bool file::get<bool> (const char cat[], const char prop[], bool def) {
+		string val;
+		try {
+			val = getStringValue(cat, prop);
+		}
+		catch (invalid_argument e) {
+			return def;
+		}
+		bool isValid = checkIfValid<bool>(val);
+
+		if (!isValid) {
+			warn(cat, prop, val, to_string(def), "bool");
+		}
+
+		return !isValid ? def : (val == "1" || val == "true" ? true : false);
+	}
+
+	template<> string file::get<string> (const char cat[], const char prop[], string def) {
+		string val;
+		try {
+			val = getStringValue(cat, prop);
+		}
+		catch (invalid_argument e) {
+			cout << "{" + _path + "} Invalid assignment for string: [" << cat << "." << prop << " == <empty or missing string>] fallback value=[" + def + "]" << endl; 
+			return def;
+		}
+
+		return val;
+	}
+
 }
