@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <algorithm>
 #include <type_traits>
-using namespace std;
 
 namespace iniParser {
 
@@ -15,11 +14,11 @@ namespace iniParser {
 
 		private:
 
-			string _path;
+			std::string _path;
 			
-			vector<tuple<string, string>> categories;
+			std::vector<std::tuple<std::string, std::string>> categories;
 
-			void findIllegalChars(vector<char> validChars, string val, bool& isValid) {	    	
+			void findIllegalChars(std::vector<char> validChars, std::string val, bool& isValid) {	    	
 
 	        	isValid = true;
 	        	for (size_t i = 0; i < val.length(); i++) {
@@ -37,33 +36,33 @@ namespace iniParser {
 						std::conditional<
 							std::is_same<bool, T>::value,
 							bool, 
-							string
+							std::string
 						>
 				>::type
 			> 
-			void checkIfValid(string val, bool& isValid) {
-				vector<char> validChars = { '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+			void checkIfValid(std::string val, bool& isValid) {
+				std::vector<char> validChars = { '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
        			findIllegalChars(validChars, val, isValid);
 			};
 
-			template<typename T> void fallbackIfInvalid(string cat, string prop, T def, string& val, bool& isValid, string type) {
+			template<typename T> void fallbackIfInvalid(std::string cat, std::string prop, T def, std::string& val, bool& isValid, std::string type) {
 	    	    try {
 	    	    	val = getStringValue(cat, prop);
 	        	}
-	        	catch (invalid_argument e) {
-                    cout << e.what() << " fallback value=" << def << endl;
+	        	catch (std::invalid_argument e) {
+                    std::cout << e.what() << " fallback value=" << def << std::endl;
 	    	    }
 		    	checkIfValid<T>(val, isValid);
 
 		         if (!isValid) {
-			        cout << "{" + _path + "} Invalid assignment for [" + type + " " + cat + "." + prop + " == " + val + "] fallback value=[" + def + "]" << endl; 
+			        std::cout << "{" + _path + "} Invalid assignment for [" + type + " " + cat + "." + prop + " == " + val + "] fallback value=[" << def << "]" << std::endl; 
 		        }
 	        }
 
-			int findCategory(string category) {
+			int findCategory(std::string category) {
 				int res = -1;
 				for (size_t i = 0; i < categories.size(); i++) {
-					string cat = std::get<0>(categories[i]);
+					std::string cat = std::get<0>(categories[i]);
 					if (cat == category) {
 						res = i;
 						break;
@@ -72,21 +71,21 @@ namespace iniParser {
 				return res;
 			}
 
-			string getStringValue(string category, string property) {
-				string res = "";
+			std::string getStringValue(std::string category, std::string property) {
+				std::string res = "";
 				int catI = findCategory(category);
 				if (catI != -1) {
-					string &props = std::get<1>(categories[catI]); // store adress of first character of the string
-					stringstream ss (props);
-					string line;
+					std::string &props = std::get<1>(categories[catI]); // store adress of first character of the string
+					std::stringstream ss (props);
+					std::string line;
 					// read line by line
 					while (getline(ss, line, '\n')) {
 						const char delimiter = '=';
 						size_t i = line.find(delimiter);
-						if (i != string::npos) {
-							string pname = line.substr(0, i);
+						if (i != std::string::npos) {
+							std::string pname = line.substr(0, i);
 							if (pname == property) {
-								string pval = line.substr(i + 1);
+								std::string pval = line.substr(i + 1);
 								res = pval;
 								break;
 							}
@@ -98,23 +97,23 @@ namespace iniParser {
 						return res;
 					}
 					else
-						throw invalid_argument("{" + _path + "} Property [" + category + "." + property + "] not found!");
+						throw std::invalid_argument("{" + _path + "} Property [" + category + "." + property + "] not found!");
 				}
 				else 
-					throw invalid_argument("Category [" + category + "] not found!");
+					throw std::invalid_argument("Category [" + category + "] not found!");
 
 			}
 
 		public:
 
-			file(string path) {
+			file(std::string path) {
 
 				_path = path;
-				string contents;
+				std::string contents;
 
-				ifstream file (path);
+				std::ifstream file (path);
 				if (file.is_open()) {
-					stringstream buffer;
+					std::stringstream buffer;
 					buffer << file.rdbuf();
 					contents = buffer.str();
 					file.close();
@@ -125,15 +124,15 @@ namespace iniParser {
 				// split into categories
 				while (!isSplitted) {
 
-					string cut = contents.substr(position);
+					std::string cut = contents.substr(position);
 					size_t bracket1 = cut.find("[");
 					size_t bracket2 = cut.find("]");
-					string category = cut.substr(bracket1 + 1, bracket2 - bracket1 - 1);
+					std::string category = cut.substr(bracket1 + 1, bracket2 - bracket1 - 1);
 	
 					size_t blobStart = position + bracket2 + 2;
 					size_t blobEnd = cut.substr(bracket2 + 1).find("[");
 
-					if (blobEnd == string::npos) {
+					if (blobEnd == std::string::npos) {
 						blobEnd = contents.length() - blobStart + 1;
 						isSplitted = true;
 					}
@@ -142,7 +141,7 @@ namespace iniParser {
 						position = blobStart + blobEnd;
 					}
 
-					string blob = contents.substr(blobStart, blobEnd);
+					std::string blob = contents.substr(blobStart, blobEnd);
 					categories.push_back(make_tuple(category, blob));
 
 				}
@@ -153,25 +152,23 @@ namespace iniParser {
 		
 	};
 
-	template<> void file::checkIfValid<bool> (string val, bool& isValid) {
-		vector<string> validValues = { "0", "1", "true", "false" };
+	template<> void file::checkIfValid<bool> (std::string val, bool& isValid) {
+		std::vector<std::string> validValues = { "0", "1", "true", "false" };
 		isValid = true;
 		if (!std::count(validValues.begin(), validValues.end(), val)) {
 			isValid = false;
 		}
 	}
 
-	// ---------------------------------------------------------------------------------------------
-
 	template<> int file::get<int> (const char cat[], const char prop[], int def) {
-		string val; bool isValid;
+		std::string val; bool isValid;
 		fallbackIfInvalid(cat, prop, def, val, isValid, "int");
 
 		return isValid ? atoi(&val[0]) : def;
 	}
 
 	template<> float file::get<float> (const char cat[], const char prop[], float def) {
-		string val; bool isValid;
+		std::string val; bool isValid;
 		fallbackIfInvalid(cat, prop, def, val, isValid, "float");
 
 		char* e;
@@ -179,26 +176,26 @@ namespace iniParser {
 	}
 
 	template<> double file::get<double> (const char cat[], const char prop[], double def) {
-		string val; bool isValid;
+		std::string val; bool isValid;
 		fallbackIfInvalid(cat, prop, def, val, isValid, "double");
 
 		return isValid ? atof(&val[0]) : def;
 	}
 
 	template<> bool file::get<bool> (const char cat[], const char prop[], bool def) {
-		string val; bool isValid;
+		std::string val; bool isValid;
 		fallbackIfInvalid(cat, prop, def, val, isValid, "bool");
 
 		return !isValid ? def : (val == "1" || val == "true" ? true : false);
 	}
 
-	template<> string file::get<string> (const char cat[], const char prop[], string def) {
-		string val;
+	template<> std::string file::get<std::string> (const char cat[], const char prop[], std::string def) {
+		std::string val;
 		try {
 			val = getStringValue(cat, prop);
 		}
-		catch (invalid_argument e) {
-			cout << "{" + _path + "} Invalid assignment for: [string " << cat << "." << prop << " = <empty or missing string>] fallback value=[" + def + "]" << endl; 
+		catch (std::invalid_argument e) {
+			std::cout << "{" + _path + "} Invalid assignment for: [string " << cat << "." << prop << " = <empty or missing string>] fallback value=[" + def + "]" << std::endl; 
 			return def;
 		}
 
