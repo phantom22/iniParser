@@ -56,13 +56,13 @@ namespace iniParser
 			}
 			catch (std::invalid_argument e)
 			{
-				std::cout << e.what() << " fallback value=" << def << std::endl;
+				std::cout << "{" + _path + "} Category [" + cat + "] for [" + type + " " + cat + "." + prop + "] not found! fallback value=[" + std::to_string(def) + "]" << std::endl;
 			}
 			checkIfValid<T>(val, isValid);
 
 			if (!isValid)
 			{
-				std::cout << "{" + _path + "} Invalid assignment for [" + type + " " + cat + "." + prop + " == " + val + "] fallback value=[" << def << "]" << std::endl;
+				std::cout << "{" + _path + "} Invalid assignment for [" + type + " " + cat + "." + prop + "=" + val + "] fallback value=[" << def << "]" << std::endl;
 			}
 		}
 
@@ -116,7 +116,7 @@ namespace iniParser
 					throw std::invalid_argument("{" + _path + "} Property [" + category + "." + property + "] not found!");
 			}
 			else
-				throw std::invalid_argument("Category [" + category + "] not found!");
+				throw std::invalid_argument(""); // all done at line 53
 		}
 
 	public:
@@ -231,7 +231,7 @@ namespace iniParser
 		}
 		catch (std::invalid_argument e)
 		{
-			std::cout << "{" + _path + "} Invalid assignment for: [string " << cat << "." << prop << " = <empty or missing string>] fallback value=[" + def + "]" << std::endl;
+			std::cout << "{" + _path + "} Invalid assignment for: [string " << cat << "." << prop << "=<empty or missing string>] fallback value=[" + def + "]" << std::endl;
 			return def;
 		}
 
