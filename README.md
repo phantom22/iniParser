@@ -29,9 +29,9 @@ and then parse it to a different type.
 
 # how a .ini file is parsed?
 
-Comments (`;`) are supported, the line gets trimmed from ```line start``` to ```comment start```.
-Assignments such as `  my Prop  = 31 5` (with a some spaces before the equals sign) will be interpreted as `myProp=315` but if you have `my Pro p= "315 3 2" ;comment`
-it will be parsed as `myProp=315 3 2` preserving the spaces enclosed in "".
+Comments (`;`) are supported, the line gets trimmed from `line start` to `comment start`.
+
+Any spaces are automatically removed (for ex. `  my Var = 315` is equal to `myVar=315` but if you add "" like in this example `my var = " some str ing"` = `myVar= some str ing`). P.S. the string declaration rule works only for the property value!
 
 # What is the third argument?
 
