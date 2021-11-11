@@ -4,6 +4,10 @@ This is a header that allows you to parse the data from an .ini file.
 
 # Usage
 
+
+- First instantiate with `iniParser::file ini = iniParser::(string path_to_file);`
+- Then get a value with `ini.get<T>(const char category[], const char property[], T fallbackValue);`
+
 ```cpp
   iniParser::file settings = iniParser::file ("<relative path>");
 
