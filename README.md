@@ -24,14 +24,14 @@ This is a header that allows you to parse the data from an .ini file.
 
 # supported default types
 
-```int```, ```float```, ```double```, ```bool``` and the jolly ```string``` which can be used to at least get the wanted string value
+`int`, `float`, `double`, `bool` and the jolly `string` which can be used to at least get the wanted string value
 and then parse it to a different type.
 
 # how a .ini file is parsed?
 
-Comments (```;```) are supported, the line gets trimmed from ```line start``` to ```comment start```.
-Assignments such as ```  my Prop  =315``` (with a lot of spaces before the equals sign) will be interpreted as ```myProp=315``` but if you have ```myProp= 315 3 2```
-the value that will be returned from the property ```myProp``` will be " 315 3 2"
+Comments (`;`) are supported, the line gets trimmed from ```line start``` to ```comment start```.
+Assignments such as `  my Prop  = 31 5` (with a some spaces before the equals sign) will be interpreted as `myProp=315` but if you have `my Pro p= "315 3 2" ;comment`
+it will be parsed as `myProp=315 3 2` preserving the spaces enclosed in "".
 
 # What is the third argument?
 
