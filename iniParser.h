@@ -14,9 +14,8 @@ namespace iniParser {
 
         private:
 
-            std::string _path = "";
-
-            std::vector<std::tuple<std::string, std::string>> categories = {};
+            std::string PATH = "";
+            std::vector<std::tuple<std::string, std::vector<std::tuple<std::string, std::string>>>> PARSED = {};
 
             void findIllegalChars (std::vector<char> validChars, std::string val, bool& isValid) {
 
@@ -29,18 +28,7 @@ namespace iniParser {
                 }
             }
 
-            template <
-                typename T,
-                typename = typename std::conditional <
-                    std::is_arithmetic<T>::value,
-                    T,
-                    std::conditional <
-                        std::is_same<bool, T>::value,
-                        bool,
-                        std::string
-                        >
-                    >::type
-                >
+            template <typename T, typename = typename std::conditional<std::is_arithmetic<T>::value, T, std::conditional<std::is_same<bool, T>::value, bool, std::string>>::type>
             void checkIfValid (std::string val, bool& isValid) {
                 std::vector<char> validChars = { '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
                 findIllegalChars (validChars, val, isValid);
@@ -50,21 +38,21 @@ namespace iniParser {
                 try {
                     val = getStringValue (cat, prop);
                 } catch (std::invalid_argument e) {
-                    std::cout << "{" + _path + "} Category [" + cat + "] for [" + type + " " + cat + "." + prop + "] not found! fallback value=[" + std::to_string (def) + "]" << std::endl;
+                    std::cout << "{" + PATH + "} Category [" + cat + "] for [" + type + " " + cat + "." + prop + "] not found! fallback value=[" + std::to_string (def) + "]" << std::endl;
                 }
 
                 checkIfValid<T> (val, isValid);
 
                 if (!isValid) {
-                    std::cout << "{" + _path + "} Invalid assignment for [" + type + " " + cat + "." + prop + "=" + val + "] fallback value=[" << def << "]" << std::endl;
+                    std::cout << "{" + PATH + "} Invalid assignment for [" + type + " " + cat + "." + prop + "=" + val + "] fallback value=[" << def << "]" << std::endl;
                 }
             }
 
             int findCategory (std::string category) {
                 int res = -1;
 
-                for (size_t i = 0; i < categories.size(); i++) {
-                    std::string cat = std::get<0> (categories[i]);
+                for (size_t i = 0; i < PARSED.size(); i++) {
+                    auto cat = std::get<0> (PARSED[i]);
 
                     if (cat == category) {
                         res = i;
@@ -80,32 +68,20 @@ namespace iniParser {
                 int catI = findCategory (category);
 
                 if (catI != -1) {
-                    std::string& props = std::get<1> (categories[catI]); // store adress of first character of the string
-                    std::stringstream ss (props);
-                    std::string line;
+                    auto props = std::get<1> (PARSED[catI]); // store adress of first character of the string
 
-                    // read line by line
-                    while (getline (ss, line, '\n')) {
-                        const char delimiter = '=';
-                        size_t i = line.find (delimiter);
+                    for (int i = 0; i < props.size(); i++) {
+                        std::string name = std::get<0> (props[i]);
 
-                        if (i != std::string::npos) {
-                            std::string pname = line.substr (0, i);
-
-                            if (pname == property) {
-                                std::string pval = line.substr (i + 1);
-                                res = pval;
-                                break;
-                            }
-                        } else {
-                            continue;
+                        if (name == property) {
+                            res = std::get<1> (props[i]);
                         }
                     }
 
                     if (res != "") {
                         return res;
                     } else {
-                        throw std::invalid_argument ("{" + _path + "} Property [" + category + "." + property + "] not found!");
+                        throw std::invalid_argument ("{" + PATH + "} Property [" + category + "." + property + "] not found!");
                     }
                 } else {
                     throw std::invalid_argument ("");    // all done at line 53
@@ -117,7 +93,7 @@ namespace iniParser {
 
             file (std::string path) {
 
-                _path = path;
+                PATH = path;
                 std::string contents;
 
                 std::ifstream file (path);
@@ -152,7 +128,48 @@ namespace iniParser {
                     }
 
                     std::string blob = contents.substr (blobStart, blobEnd);
-                    categories.push_back (make_tuple (category, blob));
+
+                    std::vector<std::tuple<std::string, std::string>> pairs;
+
+                    // read line by line
+                    std::stringstream b (blob);
+                    std::string line;
+
+                    while (getline (b, line, '\n')) {
+                        // trim comments
+                        const char comment = ';';
+                        size_t commentI = line.find (comment);
+
+                        if (commentI != std::string::npos) {
+                            line = line.substr (0, commentI);
+                        }
+
+                        // find assignment
+                        const char assignmentDelimiter = '=';
+                        size_t assignmentI = line.find (assignmentDelimiter);
+                        std::string propName = "";
+
+                        // get assignment value
+                        if (assignmentI != std::string::npos) {
+                            std::string tmpName = line.substr (0, assignmentI);
+
+                            // remove all spaces before assignment
+                            for (char c : tmpName) {
+                                if (c != ' ') {
+                                    propName += c;
+                                }
+                            }
+                        }
+                        // if no '=', skip line
+                        else {
+                            continue;
+                        }
+
+                        std::string propVal = line.substr (assignmentI + 1);
+                        pairs.push_back (std::make_tuple (propName, propVal));
+                    }
+
+                    PARSED.push_back (make_tuple (category, pairs));
 
                 }
 
@@ -165,7 +182,6 @@ namespace iniParser {
     template<> void file::checkIfValid<bool> (std::string val, bool& isValid) {
         std::vector<std::string> validValues = { "0", "1", "true", "false" };
         isValid = true;
-
         if (!std::count (validValues.begin(), validValues.end(), val)) {
             isValid = false;
         }
@@ -175,7 +191,6 @@ namespace iniParser {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "int");
-
         return isValid ? atoi (&val[0]) : def;
     }
 
@@ -183,7 +198,6 @@ namespace iniParser {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "float");
-
         char* e;
         return isValid ? strtof (&val[0], &e) : def;
     }
@@ -200,20 +214,17 @@ namespace iniParser {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "bool");
-
         return !isValid ? def : (val == "1" || val == "true" ? true : false);
     }
 
     template<> std::string file::get<std::string> (const char cat[], const char prop[], std::string def) {
         std::string val;
-
         try {
             val = getStringValue (cat, prop);
         } catch (std::invalid_argument e) {
-            std::cout << "{" + _path + "} Invalid assignment for: [string " << cat << "." << prop << "=<empty or missing string>] fallback value=[" + def + "]" << std::endl;
+            std::cout << "{" + PATH + "} Invalid assignment for: [string " << cat << "." << prop << "=<empty or missing string>] fallback value=[" + def + "]" << std::endl;
             return def;
         }
-
         return val;
     }
 
