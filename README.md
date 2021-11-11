@@ -35,4 +35,4 @@ the value that will be returned from the property ```myProp``` will be " 315 3 2
 
 # What is the third argument?
 
-It's the fallback value which replaces the original value if it's not a valid one (example: expected type ```int```, original value ```2 5 1``` => ```fallback value``` because the original one cannot be parsed to int; but if it original value ```251``` => ```251``` because it's a valid integer number) 
+It's the fallback value which replaces the original value if it's not a valid one (example: expected type ```int```, original value ```2 5 1``` => ```fallback value``` because the original one cannot be parsed to int; but if it was: original value ```251``` => ```251``` because it's a valid integer number) 
