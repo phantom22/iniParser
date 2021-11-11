@@ -148,6 +148,7 @@ namespace iniParser {
                         const char assignmentDelimiter = '=';
                         size_t assignmentI = line.find (assignmentDelimiter);
                         std::string propName = "";
+                        std::string propVal = "";
 
                         // get assignment value
                         if (assignmentI != std::string::npos) {
@@ -159,13 +160,40 @@ namespace iniParser {
                                     propName += c;
                                 }
                             }
+
+                            std::string tmpVal = line.substr (assignmentI + 1);
+                            size_t stringDeclarationBegin = tmpVal.find ('"');
+                            bool validStringDeclaration = false;
+
+                            // if first '"' was found
+                            if (stringDeclarationBegin != std::string::npos) {
+                                size_t stringDeclarationEnd = tmpVal.substr (stringDeclarationBegin + 1).find ('"');
+
+                                // check if there is a second one
+                                if (stringDeclarationEnd != std::string::npos) {
+                                    // get the value inside the two ""
+                                    propVal = tmpVal.substr (stringDeclarationBegin + 1, stringDeclarationEnd);
+                                    validStringDeclaration = true;
+                                }
+                            }
+
+                            // if there is no string declaration
+                            if (!validStringDeclaration) {
+                                // remove all spaces from propVal
+                                for (char c : tmpVal) {
+                                    if (c != ' ') {
+                                        propVal += c;
+                                    }
+                                }
+
+                            }
+
                         }
                         // if no '=', skip line
                         else {
                             continue;
                         }
 
-                        std::string propVal = line.substr (assignmentI + 1);
                         pairs.push_back (std::make_tuple (propName, propVal));
                     }
 
@@ -182,6 +210,7 @@ namespace iniParser {
     template<> void file::checkIfValid<bool> (std::string val, bool& isValid) {
         std::vector<std::string> validValues = { "0", "1", "true", "false" };
         isValid = true;
+
         if (!std::count (validValues.begin(), validValues.end(), val)) {
             isValid = false;
         }
@@ -219,12 +248,14 @@ namespace iniParser {
 
     template<> std::string file::get<std::string> (const char cat[], const char prop[], std::string def) {
         std::string val;
+
         try {
             val = getStringValue (cat, prop);
         } catch (std::invalid_argument e) {
             std::cout << "{" + PATH + "} Invalid assignment for: [string " << cat << "." << prop << "=<empty or missing string>] fallback value=[" + def + "]" << std::endl;
             return def;
         }
+
         return val;
     }
 
