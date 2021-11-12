@@ -36,7 +36,7 @@ Any spaces are automatically removed (for ex. `  my Var = 315` is equal to `myVa
 
 # What is the third argument?
 
-It's the fallback value which replaces the original value if it's not a valid one (example: expected type `int`, original value `2 5 1` => `fallback value` because the original one cannot be parsed to int; but if it was: original value `251` => `251` because it's a valid integer number)
+It's the fallback value which replaces the original value if it's not a valid one.
 ```cpp
   /*
    *  Processed file
