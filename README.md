@@ -52,8 +52,8 @@ It's the fallback value which replaces the original value if it's not a valid on
   
   string secondString = settings.get("numbers", "numberB", "some cool string");  // ERROR
   
-  // a workaround could be a helper function that takes as input (const char[]) and convert it to (string)
-  string thirdString = settings.get("number", "numberB", exampleCharArrToStr("some cool string")); // if done correctly it won't throw an error
+  // a workaround could be using the string constructor
+  string thirdString = settings.get("number", "numberB", string("some cool string")); // if done correctly it won't throw an error
   
 ```
 
