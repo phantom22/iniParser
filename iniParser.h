@@ -10,12 +10,39 @@
 
 namespace iniParser {
 
-    class file {
+    // a class to
+    class ini {
 
         private:
 
             std::string PATH = "";
             std::vector<std::tuple<std::string, std::vector<std::tuple<std::string, std::string>>>> PARSED = {};
+
+            std::string removeAllSpacesFromString (std::string str) {
+                std::string output = "";
+
+                for (char c : str) {
+                    if (c != ' ') {
+                        output += c;
+                    }
+                }
+
+                return output;
+            }
+
+            void hasValidStringDeclaration (std::string str, bool& validStringDeclaration, size_t& strDeclStar, size_t& strDeclEnd) {
+                strDeclStar = str.find ('"');
+
+                // if first '"' was found
+                if (strDeclStar != std::string::npos) {
+                    strDeclEnd = str.substr (strDeclStar + 1).find ('"');
+
+                    // check if there is a second one
+                    if (strDeclEnd != std::string::npos) {
+                        validStringDeclaration = true;
+                    }
+                }
+            }
 
             void findIllegalChars (std::vector<char> validChars, std::string val, bool& isValid) {
 
@@ -38,7 +65,9 @@ namespace iniParser {
                 try {
                     val = getStringValue (cat, prop);
                 } catch (std::invalid_argument e) {
+                    isValid = false;
                     std::cout << "{" + PATH + "} Category [" + cat + "] for [" + type + " " + cat + "." + prop + "] not found! fallback value=[" + std::to_string (def) + "]" << std::endl;
+                    return;
                 }
 
                 checkIfValid<T> (val, isValid);
@@ -84,14 +113,14 @@ namespace iniParser {
                         throw std::invalid_argument ("{" + PATH + "} Property [" + category + "." + property + "] not found!");
                     }
                 } else {
-                    throw std::invalid_argument ("");    // all done at line 53
+                    throw std::invalid_argument (""); // all done at line 69
                 }
 
             }
 
         public:
 
-            file (std::string path) {
+            ini (std::string path) {
 
                 PATH = path;
                 std::string contents;
@@ -103,6 +132,9 @@ namespace iniParser {
                     buffer << file.rdbuf();
                     contents = buffer.str();
                     file.close();
+                } else {
+                    std::cout << "{" + path + "} Specified file path has not been found!" << std::endl;
+                    return;
                 }
 
                 bool isSplitted = false;
@@ -152,40 +184,25 @@ namespace iniParser {
 
                         // get assignment value
                         if (assignmentI != std::string::npos) {
-                            std::string tmpName = line.substr (0, assignmentI);
 
-                            // remove all spaces before assignment
-                            for (char c : tmpName) {
-                                if (c != ' ') {
-                                    propName += c;
-                                }
-                            }
+                            std::string tmpName = line.substr (0, assignmentI);
+                            propName = removeAllSpacesFromString (tmpName);
+
 
                             std::string tmpVal = line.substr (assignmentI + 1);
-                            size_t stringDeclarationBegin = tmpVal.find ('"');
-                            bool validStringDeclaration = false;
+                            size_t declBegin;
+                            size_t declEnd;
+                            bool validDecl = false;
 
-                            // if first '"' was found
-                            if (stringDeclarationBegin != std::string::npos) {
-                                size_t stringDeclarationEnd = tmpVal.substr (stringDeclarationBegin + 1).find ('"');
-
-                                // check if there is a second one
-                                if (stringDeclarationEnd != std::string::npos) {
-                                    // get the value inside the two ""
-                                    propVal = tmpVal.substr (stringDeclarationBegin + 1, stringDeclarationEnd);
-                                    validStringDeclaration = true;
-                                }
-                            }
+                            hasValidStringDeclaration (tmpVal, validDecl, declBegin, declEnd);
 
                             // if there is no string declaration
-                            if (!validStringDeclaration) {
-                                // remove all spaces from propVal
-                                for (char c : tmpVal) {
-                                    if (c != ' ') {
-                                        propVal += c;
-                                    }
-                                }
-
+                            if (!validDecl) {
+                                propVal = removeAllSpacesFromString (tmpVal);
+                            } else
+                                // get the value inside the two ""
+                            {
+                                propVal = tmpVal.substr (declBegin + 1, declEnd);
                             }
 
                         }
@@ -207,7 +224,7 @@ namespace iniParser {
 
     };
 
-    template<> void file::checkIfValid<bool> (std::string val, bool& isValid) {
+    template<> void ini::checkIfValid<bool> (std::string val, bool& isValid) {
         std::vector<std::string> validValues = { "0", "1", "true", "false" };
         isValid = true;
 
@@ -216,14 +233,14 @@ namespace iniParser {
         }
     }
 
-    template<> int file::get<int> (const char cat[], const char prop[], int def) {
+    template<> int ini::get<int> (const char cat[], const char prop[], int def) {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "int");
         return isValid ? atoi (&val[0]) : def;
     }
 
-    template<> float file::get<float> (const char cat[], const char prop[], float def) {
+    template<> float ini::get<float> (const char cat[], const char prop[], float def) {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "float");
@@ -231,7 +248,7 @@ namespace iniParser {
         return isValid ? strtof (&val[0], &e) : def;
     }
 
-    template<> double file::get<double> (const char cat[], const char prop[], double def) {
+    template<> double ini::get<double> (const char cat[], const char prop[], double def) {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "double");
@@ -239,14 +256,14 @@ namespace iniParser {
         return isValid ? atof (&val[0]) : def;
     }
 
-    template<> bool file::get<bool> (const char cat[], const char prop[], bool def) {
+    template<> bool ini::get<bool> (const char cat[], const char prop[], bool def) {
         std::string val;
         bool isValid;
         fallbackIfInvalid (cat, prop, def, val, isValid, "bool");
         return !isValid ? def : (val == "1" || val == "true" ? true : false);
     }
 
-    template<> std::string file::get<std::string> (const char cat[], const char prop[], std::string def) {
+    template<> std::string ini::get<std::string> (const char cat[], const char prop[], std::string def) {
         std::string val;
 
         try {
