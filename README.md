@@ -58,4 +58,4 @@ It's the fallback value which replaces the original value if it's not a valid on
 
 # What about errors?
 
-This project handles invalid ini file paths, categories and property names; every unwanted behavior is easily solved due to the built-in suggestions which specify exactly what's wrong or missing. (no error handling is required, fallback values work even if the file is non-existent)
+This project handles invalid ini file paths, categories and property names; every unwanted behavior is easily solved due to the built-in console suggestions which specify exactly what's wrong or missing. (no error handling is required, fallback values work even if the file is non-existent)
