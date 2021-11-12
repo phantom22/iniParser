@@ -19,6 +19,7 @@ This is a header that allows you to parse the data from an .ini file.
   auto x = settings.get("category", "propertyName", 0);
   // in this situation `x` is automatically considered an int, because the third arguments type is the same as the return type
   // (used only if the targeted file doesn't have the specified category/category property)
+  // x is equal to 1352
    
 ```
 
